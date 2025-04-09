@@ -1,7 +1,52 @@
-### **`Generic type` function decleration**
+No, that is **not** the correct way to declare a loop in Rust. The syntax `'counting loop { }` is invalid. Rust has three main types of loops:
 
 ---
 
+### **1. Infinite Loop (`loop`)**
+```rust
+loop {
+    println!("This runs forever!");
+    // Use `break` to exit
+    if condition {
+        break;
+    }
+}
+```
+- Runs indefinitely until `break` is called.
+- Can return a value with `break value;`.
+
+---
+
+### **2. Conditional Loop (`while`)**
+```rust
+while condition {
+    println!("Runs while condition is true");
+}
+```
+- Checks the condition **before** each iteration.
+
+---
+
+### **3. For Loop (`for`)**
+```rust
+for item in collection {
+    println!("{}", item);
+}
+```
+- Iterates over iterators (e.g., ranges, arrays, vectors).
+- Example with a range:
+  ```rust
+  for i in 1..=5 {  // 1 to 5 (inclusive)
+      println!("Count: {}", i);
+  }
+  ```
+
+
+
+### **Generic type` function decleration**
+
+---
+```rust
 fn add<T, K>(v: Vec<T>) -> Option<K>
 where
     T: Into<K> + Copy,
@@ -19,8 +64,13 @@ where
 
     Some(result)
 }
+```
 
+### Implementation in the rust main file
 
+---
+
+```rust
 fn main() {
     let ints = vec![1, 2, 3, 4];
     let floats = vec![1.5f32, 2.5, 3.0];
@@ -31,3 +81,4 @@ fn main() {
     println!("Sum as f64: {:?}", sum_as_f64); // Some(10.0)
     println!("Sum as f32: {:?}", sum_f32);    // Some(7.0)
 }
+```
