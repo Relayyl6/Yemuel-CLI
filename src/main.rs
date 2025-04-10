@@ -1,5 +1,6 @@
 use std::io;
 use std::fmt;
+use rand::Rng;
 
 enum Operation {
     Addition,
@@ -31,6 +32,18 @@ impl fmt::Display for Operation {  // implementing the Display trait from the st
     }
 }
 
+impl fmt::Display for Token {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Token::Plus => write!(f, "+")
+            Token::Minus => write!(f, "-")
+            Token::Divide => write!(f, "/")
+            Token::Multiply => write!(f, "*")
+        }
+    }
+}
+
 fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens = Vec::new();
     // .chars() convers a string into an iterator over its characters
@@ -57,6 +70,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                             .map_err(|_| format!("Invalid number: {}", current_number))?;
                 tokens.push(Token::Number(num));
                 current_number.clear();
+            }
             
             match c {
                 "+" => tokens.push(Token::Plus),
@@ -65,17 +79,17 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 "*" => tokens.push(Token::Multiply),
                 "(" => tokens.push(Token::LParen),
                 ")" => tokens.push(Token::RParen),
+                _ => return Err(format!("Invalid character: {}", c)),
             } // eg  "123 + 456" results in tokens = vec![Token::Number(123.0), Token::Plus, Token::Number(456.0)]
             chars.next();
         }
+    }
 
         if !current_number.is_empty() {
             let num = current_number.parse::<f64>()
                         .map_err(|_| format!("Invalid number: {}", current_number))?;
             tokens.push(Token::Number(num));
-
-    }
-
+        }
     Ok(tokens)
 
     // eg of implementation in fn main
@@ -83,7 +97,6 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     // match tokenize(input) {
     //     Ok(tokens) => {
     //         println!("Tokens: {:?}", tokens);
-    //         // Process the tokens further (e.g., parsing or evaluation)
     //     }
     //     Err(e) => {
     //         println!("Error during tokenization: {}", e);
@@ -97,13 +110,22 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
 
 }
 
-fn parse(tokens: Vec<Token>) -> Result<Vec<Token>, String> {
+fn parse(tokens: Vec<Token>) -> Result<Vec<Token>, String> { //  Shunting-yard algorithm to convert infix notation to postfix (Reverse Polish Notation): basically PEMDAS implementation
     let mut output = Vec::new();
-    let mut operator = Vec::new()
+    let mut operator = Vec::new();
 
     for token in tokens {
         match token {
-            Token::Number(_) => output.push(token)
+            Token::Number(_) => output.push(token),
+            Token::LParen => operator.push(token),
+            Token::RParen => {
+                while let Some(op) = operator.pop() {
+                    if op == Token::Lparen {
+                        break,
+                    }
+                }
+            }
+            
         }
     }
 }
@@ -157,33 +179,69 @@ fn main() {
 }  
    
 
-fn simple_calc(param: i32) -> Result<&static str, String> {
+fn simple_calc(param: i32) -> Result<&'static str, String> {
 
     // tokenizing the input, to seperate integeer from operation sign // ref fn tokenize
 
-    let add_op = Operation::Addition;
-    let sub_op = Operation::Subtraction;
-    let div_op = Operation::Division;
-    let mul_op = Operation::Multiplication;
+    let add_op = Operation::Plus;
+    let sub_op = Operation::Minus;
+    let div_op = Operation::Divide;
+    let mul_op = Operation::Multiply;
     
+    let secret_number: u32 = rand::thread_rng().gen_range(1..=10);
 
     let mut count = 0;
 
-    loop {
+    match param {
+        Ok(value) if !(1..=4).contains(&value) => {
+            'counting: loop {
+                println("Enter string operation you would like to perform\n e.g. {}, {}, {}, {}, {}, {}, {}, {}"), secret_number, add_op, secret_number, sub_op, secret_number, div_op, secret_number, mul_op;
+                
+                let mut calculation = String::new();
+                io::stdin()
+                    .read_line(&mut calculation)
+                    .expect("failed to read input");
 
-        Println("Enter string operation you would like to perform\n e.g. {}  ")
-        
-        let mut calculation = String::new();
-        io::stdin()
-            .read_line(&mut calculation)
-            .expect("failed to read input");
+                match tokenize(&calculation) {
+                    Ok(tokens) => {
+                        println!("The result of your calculation is {}", tokens);
+                        println!("Would you like to continue? Y/N");
 
-        if param.trim() == "end" {
-            println!("\nThank you for using this CLI calculator\n");
-            break
+                        let mut question = String::new();
+                        io::stdin()
+                            .read_line(&mut question)
+                            .expect("Failed to read input");
+
+                        let question = question.trim()
+
+                        if question == "Y" {
+                            continue;
+                        } else if question == "N" {
+                            break 'counting;
+                        } else {
+                            panic!("No option selected. Panic notion")
+                        }
+                    }
+                    Err(e) => {
+                        panic!("Error during tokenization: {}", e)
+                    }
+                }
+    
+                count += 1
+            } 
         }
-        count += 1
-    } 
+        Ok(value) => {
+            if param.trim() == "end" {
+                println!("\nThank you for using this CLI calculator\n");
+                break 'counting;
+            }
+        }
+        Err(e) => {
+            panic!("Error: Invalid input: {}", e);
+        }
+    }
+
+    
 }
    
    
@@ -204,7 +262,7 @@ fn perform_calculation(params: i32) {
         println!("Please enter your first input: ");
         let mut first_input = String::new();
         io::stdin()
-            .read_line(&mut input)
+            .read_line(&mut first_input)
             .expect("Failed to read input");
         let first_input: i32 = first_input
                                     .trim()
@@ -226,28 +284,28 @@ fn perform_calculation(params: i32) {
         
         match chosen_operation {
             Ok(op) => {
-                match op => {
+                match op {
                     "Addition" => {
-                        let result: i32 = addition(first_input, second_input),
-                        println("the result of your calculation: {} {} {} = {}", first_input, symbol, second_input, result);
+                        let result: i32 = addition(first_input, second_input);
+                        println!("the result of your calculation: {} {} = {}", first_input, symbol, second_input, result);
                     }
                     "Subtraction" => {
-                        let result: i32 = subtraction(first_input, second_input),
-                        println("the result of your calculation: {} {} {} = {}", first_input, symbol, second_input, result);
+                        let result: i32 = subtraction(first_input, second_input);
+                        println!("the result of your calculation: {} {} = {}", first_input, symbol, second_input, result);
                     }
                     "Division" => {
                         match division(first_input, second_input) {
                             Ok(result) => {
-                                println!("the result of your calculation: {} {} {} = {}", first_input, symbol, second_input, result);
+                                println!("the result of your calculation: {} {}= {}", first_input, symbol, second_input, result);
                             }
                             Err(e) => {
-                                println!("Error: {}", e)
+                                println!("Error: {}", e);
                             }
                         }
                     }
                     "Multiplication" => {
-                        let result: i32 = multiplication(first_input, second_input),
-                        println("the result of your calculation: {} {} {} = {}", first_input, symbol, second_input, result);
+                        let result: i32 = multiplication(first_input, second_input);
+                        println!("the result of your calculation: {} {} = {}", first_input, symbol, second_input, result);
                     }
                     _ => {
                         panic!("Unexpected operation", op);
@@ -269,7 +327,7 @@ fn addition(first_param: i32, second_param: i32) -> i32 {
     sum
 }
 fn subtraction(first_param: i32, second_param: i32) -> i32 {
-    let difference = first_input - &second_input;
+    let difference = first_param - second_param;
     difference
 }
 fn division(first_param: i32, second_param: i32) -> Result<i32, String> {
@@ -288,15 +346,13 @@ fn division(first_param: i32, second_param: i32) -> Result<i32, String> {
         (_, 0.0)=>  Err("Error: Division by zero is not allowed for the first parameter".to_string()),
         _ => {
             let dividend: f64 = first_param_as_f64 / second_param_as_f64;
-            let dividend_as_i32 = dividend as i32;
+            let dividend_as_i32 = dividend.round() as i32;
             Ok(dividend_as_i32)
         },
     } 
-
-    let dividend_as_i32 = dividend.round() as i32;
 }
 fn multiplication(first_param: i32, second_param: i32) -> i32 {
-    let multiple = first_input * second_input;
+    let multiple = first_param * second_param;
     multiple
 }
 
