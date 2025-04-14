@@ -9,6 +9,7 @@ enum Operation {
     Multiplication,
 }
 
+#[derive(PartialEq)]
 enum Token {
     Number(f64),
     Plus,
@@ -37,12 +38,11 @@ impl fmt::Display for Token {
             Token::Minus => write!(f, "-"),
             Token::Divide => write!(f, "/"),
             Token::Multiply => write!(f, "*"),
-            _ => Ok(()), // Handle other cases
         }
     }
 }
 
-fn tokenize(input: &str) -> Result<Vec<Token>, String> {
+fn tokenize(input: &str) -> Result<Vec<Token>, String> { 
     let mut tokens = Vec::new();
     let mut chars = input.chars().peekable();
     let mut current_number = String::new();
@@ -136,6 +136,40 @@ fn precedence(token: &Token) -> u8 {
     }
 }
 
+fn evaluate(postfix: Vec<Token>) -> Result<String, String> {
+    let mut stack = Vec::new();
+
+    for token in postfix {
+        match token {
+            Token::Number(num) => stack.push(num),
+            _ => {
+                let right: i32 = stack.into().pop().ok_or("Missing operand")?; // .ok_or Converts the Option returned by pop() into a Result.
+                let left:i32 = stack.into().pop().ok_or("Missing operand")?;
+                let result = match token {
+                    Token::Plus => addition(left, right),
+                    Token::Minus => subtraction(left, right),
+                    Token::Multiply => multiplication(left, right),
+                    Token::Divide => match division(left, left) {
+                        Ok(result) => {
+                            result
+                        }
+                        Err(e) => {
+                            println!("Error: {}", e);
+                        },
+                    _ => return Err("Invalid operator in evaluation".to_string()),
+                }
+                stack.push(result);
+            }
+        }
+    }
+    
+    if stack.len() != 1 {
+        return Err("Invalid expression".to_string());
+    }
+
+    Ok(stack[0].to_string()) 
+}
+
 fn operation_to_symbol(param: &str) -> Option<&'static str> {
     match param {
         "Addition" => Some("+"),
@@ -170,7 +204,8 @@ fn main() {
     let option_type: i32 = option_type.trim().parse().expect("Failed to read input");
 
     if !(1..=4).contains(&option_type) {
-        simple_calc(option_type);
+        println!("Since you wouldn't fancy a single operation");
+        simple_calc(Ok(option_type));
     } else if (1..=4).contains(&option_type) {
         perform_calculation(option_type);
     } else {
@@ -178,19 +213,31 @@ fn main() {
     }
 }
 
-fn simple_calc(param: i32) -> Result<&'static str, String> {
-    let add_op = Operation::Addition;
-    let sub_op = Operation::Subtraction;
-    let div_op = Operation::Division;
-    let mul_op = Operation::Multiplication;
+fn process_calc(input: &str) -> Result<String, String> {
+    let tokens = tokenize(input)?;
+    let postfix = parse(tokens)?;
+    let result = evaluate(postfix)?;
+    Ok(result)
 
-    let secret_number: u32 = rand::thread_rng().gen_range(1..=10);
+}
+
+fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
+    let add_op = Token::Add;
+    let sub_op = Token::Subtract;
+    let div_op = Token::Divide;
+    let mul_op = Token::Multiply;
+
+    let secret_number: u32 = rand::rng().random_range(1..=10);
 
     let mut count = 0;
 
     match param {
         Ok(value) if !(1..=4).contains(&value) => {
             'counting: loop {
+                // let token = tokenize(param)?;
+                // let postfix = parse(token)?;
+                // evaluate(postfix);
+
                 println!(
                     "Enter string operation you would like to perform\n e.g. {}, {}, {}, {}, {}, {}, {}, {}",
                     secret_number, add_op, secret_number, sub_op, secret_number, div_op, secret_number, mul_op
@@ -200,8 +247,9 @@ fn simple_calc(param: i32) -> Result<&'static str, String> {
                 io::stdin()
                     .read_line(&mut calculation)
                     .expect("failed to read input");
+                let calculation = calculation.trim();
 
-                match tokenize(&calculation) {
+                match process_calc(&calculation) {
                     Ok(tokens) => {
                         println!("The result of your calculation is {}", tokens);
                         println!("Would you like to continue? Y/N");
@@ -224,14 +272,7 @@ fn simple_calc(param: i32) -> Result<&'static str, String> {
                     Err(e) => {
                         panic!("Error during tokenization: {}", e);
                     }
-                }
-
-                count += 1;
-            }
-        }
-        Ok(value) => {
-            if param == "end" {
-                println!("\nThank you for using this CLI calculator\n");
+                }             
             }
         }
         Err(e) => {
@@ -247,7 +288,7 @@ fn perform_calculation(params: i32) {
 
     match display(params) {
         Ok(chosen_operation) => {
-            println!("Selected operation, {}", params);
+            println!("Selected operation, {}", chosen_operation);
 
             if let Some(symbol) = operation_to_symbol(chosen_operation) {
                 println!("Symbol: {}", symbol);
@@ -273,7 +314,6 @@ fn perform_calculation(params: i32) {
                     .expect("Failed to parse number");
 
                 match chosen_operation {
-                    Ok(op) => match op {
                         "Addition" => {
                             let result: i32 = addition(first_input, second_input);
                             println!(
@@ -309,8 +349,7 @@ fn perform_calculation(params: i32) {
                         _ => {
                             panic!("Unexpected operation");
                         }
-                    },
-                    Err(e) => panic!("Error: {}", e),
+                    }
                 }
             } else {
                 println!("No symbol available for this operation.");
@@ -374,3 +413,4 @@ fn display(option_input: i32) -> Result<&'static str, String> {
         _ => Err("Invalid input".to_string()),
     }
 }
+    
