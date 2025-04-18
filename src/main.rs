@@ -38,7 +38,43 @@ impl fmt::Display for Token {
             Token::Minus => write!(f, "-"),
             Token::Divide => write!(f, "/"),
             Token::Multiply => write!(f, "*"),
+            Token::Number(_) => write!(f, "{1.0}"),
+            Token::LParen => write!(f, "("),
+            Token::RParen => write!(f, ")"),
         }
+    }
+}
+
+fn main() {
+    let add_op = Operation::Addition;
+    let sub_op = Operation::Subtraction;
+    let div_op = Operation::Division;
+    let mul_op = Operation::Multiplication;
+
+    println!(
+        "welcome to the rust CLI calculator\nEnter the operation you would like to perform\n 1.{} \n 2.{} \n 3.{} \n 4.{} \n Any other element implements freestyle calc \n Enter 'end' to quit.",
+        add_op, sub_op, div_op, mul_op
+    );
+
+    let mut option_type = String::new();
+
+    io::stdin()
+        .read_line(&mut option_type)
+        .expect("Failed to read input");
+
+    if option_type.trim().to_lowercase() == "end" {
+        panic!("Quitting operation");
+    }
+
+    let option_type: i32 = option_type.trim().parse().expect("Failed to read input");
+
+    if !(1..=4).contains(&option_type) {
+        println!("Since you wouldn't fancy a single operation");
+        simple_calc(Ok(option_type));
+    } else if (1..=4).contains(&option_type) {
+        perform_calculation(option_type);
+    } else {
+        println!("Thank you for your time");
     }
 }
 
@@ -136,38 +172,40 @@ fn precedence(token: &Token) -> u8 {
     }
 }
 
-fn evaluate(postfix: Vec<Token>) -> Result<String, String> {
+fn evaluate<T>(postfix: Vec<Token>) -> Result<String, String> {
     let mut stack = Vec::new();
 
     for token in postfix {
         match token {
             Token::Number(num) => stack.push(num),
             _ => {
-                let right: i32 = stack.into().pop().ok_or("Missing operand")?; // .ok_or Converts the Option returned by pop() into a Result.
-                let left:i32 = stack.into().pop().ok_or("Missing operand")?;
+                let right: i32 = <Vec<f64> as Into<T>>::into(stack).pop().ok_or("Missing operand")?; // .ok_or Converts the Option returned by pop() into a Result.
+                let left:i32 = <Vec<f64> as Into<T>>::into(stack).pop().ok_or("Missing operand")?;
                 let result = match token {
                     Token::Plus => addition(left, right),
                     Token::Minus => subtraction(left, right),
                     Token::Multiply => multiplication(left, right),
-                    Token::Divide => match division(left, left) {
+                    Token::Divide => match division(left, right) {
                         Ok(result) => {
                             result
                         }
                         Err(e) => {
-                            println!("Error: {}", e);
-                        },
+                            println!("Error: {e}");
+                            return Err(e);
+                        }
+                        }
                     _ => return Err("Invalid operator in evaluation".to_string()),
                 }
-                stack.push(result);
-            }
+            };
         }
+        stack.push(result);
     }
     
     if stack.len() != 1 {
         return Err("Invalid expression".to_string());
     }
 
-    Ok(stack[0].to_string()) 
+    return Ok(stack[0].to_string())
 }
 
 fn operation_to_symbol(param: &str) -> Option<&'static str> {
@@ -180,38 +218,7 @@ fn operation_to_symbol(param: &str) -> Option<&'static str> {
     }
 }
 
-fn main() {
-    let add_op = Operation::Addition;
-    let sub_op = Operation::Subtraction;
-    let div_op = Operation::Division;
-    let mul_op = Operation::Multiplication;
 
-    println!(
-        "welcome to the rust CLI calculator\nEnter the operation you would like to perform\n 1.{} \n 2.{} \n 3.{} \n 4.{} \n Any other element implements freestyle calc \n Enter 'end' to quit.",
-        add_op, sub_op, div_op, mul_op
-    );
-
-    let mut option_type = String::new();
-
-    io::stdin()
-        .read_line(&mut option_type)
-        .expect("Failed to read input");
-
-    if option_type.trim().to_lowercase() == "end" {
-        panic!("Quitting operation");
-    }
-
-    let option_type: i32 = option_type.trim().parse().expect("Failed to read input");
-
-    if !(1..=4).contains(&option_type) {
-        println!("Since you wouldn't fancy a single operation");
-        simple_calc(Ok(option_type));
-    } else if (1..=4).contains(&option_type) {
-        perform_calculation(option_type);
-    } else {
-        println!("Thank you for your time");
-    }
-}
 
 fn process_calc(input: &str) -> Result<String, String> {
     let tokens = tokenize(input)?;
@@ -222,8 +229,8 @@ fn process_calc(input: &str) -> Result<String, String> {
 }
 
 fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
-    let add_op = Token::Add;
-    let sub_op = Token::Subtract;
+    let add_op = Token::Plus;
+    let sub_op = Token::Minus;
     let div_op = Token::Divide;
     let mul_op = Token::Multiply;
 
@@ -349,13 +356,9 @@ fn perform_calculation(params: i32) {
                         _ => {
                             panic!("Unexpected operation");
                         }
-                    }
                 }
-            } else {
-                println!("No symbol available for this operation.");
-            }
-
-                }
+            } 
+        }
         Err(e) => {
             println!("Error: {}", e)
         }
@@ -379,7 +382,7 @@ fn division(first_param: i32, second_param: i32) -> Result<i32, String> {
 
     match (first_param_as_f64, second_param_as_f64) {
         (0.0, _) => Err("Error: Division by zero is not allowed for the first parameter".to_string()),
-        (_, 0.0) => Err("Error: Division by zero is not allowed for the second parameter".to_string()),
+        (_, 0.0) => Err("Error: Division of zero is not allowed for the second parameter".to_string()),
         _ => {
             let dividend: f64 = first_param_as_f64 / second_param_as_f64;
             let dividend_as_i32 = dividend.round() as i32;
@@ -413,4 +416,6 @@ fn display(option_input: i32) -> Result<&'static str, String> {
         _ => Err("Invalid input".to_string()),
     }
 }
+
+
     
