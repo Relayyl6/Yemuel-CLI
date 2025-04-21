@@ -66,16 +66,32 @@ fn main() {
         panic!("Quitting operation");
     }
 
-    let option_type: i32 = option_type.trim().parse().expect("Failed to read input");
+    let option_type = option_type.trim();
 
-    if !(1..=4).contains(&option_type) {
-        println!("Since you wouldn't fancy a single operation");
-        let _ = simple_calc(Ok(option_type));
-    } else if (1..=4).contains(&option_type) {
-        perform_calculation(option_type);
-    } else {
-        println!("Thank you for your time");
+    match option_type.parse::<i32>() {
+        Ok(num) if (1..=4).contains(&num) => {
+            perform_calculation(num);
+        }
+        Ok(num) => {
+            println!("Since you wouldn't fancy a single operation");
+            let _ = simple_calc(Ok(num));
+        }
+        Err(_) => {
+            println!("Since you wouldn't fancy a single operation");
+            let _ = simple_calc(Err(option_type.to_string()));
+        }
     }
+
+    // let option_type = option_type.trim().parse().expect("Failed to read input");
+
+    // if !(1..=4).contains(&option_type) {
+    //     println!("Since you wouldn't fancy a single operation");
+    //     let _ = simple_calc(Ok(option_type));
+    // } else if (1..=4).contains(&option_type) {
+    //     perform_calculation(option_type);
+    // } else {
+    //     println!("Thank you for your time");
+    // }
 }
 
 fn tokenize(input: &str) -> Result<Vec<Token>, String> { 
@@ -227,20 +243,22 @@ fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
     let div_op = Token::Divide;
     let mul_op = Token::Multiply;
 
-    let secret_number: u32 = rand::rng().random_range(1..=10);
-
-    let _count = 0;
+    let secret_number1: u32 = rand::rng().random_range(1..=10);
+    let secret_number2: u32 = rand::rng().random_range(1..=10);
+    let secret_number3: u32 = rand::rng().random_range(1..=10);
+    let secret_number4: u32 = rand::rng().random_range(1..=10);
+    let secret_number5: u32 = rand::rng().random_range(1..=10);
 
     match param {
-        Ok(value) if !(1..=4).contains(&value) => {
+        Ok(_) => {
             'counting: loop {
                 // let token = tokenize(param)?;
                 // let postfix = parse(token)?;
                 // evaluate(postfix);
 
                 println!(
-                    "Enter string operation you would like to perform\n e.g. {} {} {} {} {} {} {} {}",
-                    secret_number, add_op, secret_number, sub_op, secret_number, div_op, secret_number, mul_op
+                    "Enter string operation you would like to perform\n e.g. {} {} ({} {} {}) {} {} {} {}",
+                    secret_number1, add_op, secret_number2, sub_op, secret_number3, div_op, secret_number4, mul_op, secret_number5
                 );
 
                 let mut calculation = String::new();
@@ -275,7 +293,6 @@ fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
                 }             
             }
         }
-        Ok(_) => todo!(),
         Err(e) => {
             panic!("Error: Invalid input: {}", e);
         }
