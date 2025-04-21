@@ -38,7 +38,7 @@ impl fmt::Display for Token {
             Token::Minus => write!(f, "-"),
             Token::Divide => write!(f, "/"),
             Token::Multiply => write!(f, "*"),
-            Token::Number(_) => write!(f, "{1.0}"),
+            Token::Number(_) => write!(f, "1.0"),
             Token::LParen => write!(f, "("),
             Token::RParen => write!(f, ")"),
         }
@@ -172,40 +172,39 @@ fn precedence(token: &Token) -> u8 {
     }
 }
 
-fn evaluate<T>(postfix: Vec<Token>) -> Result<String, String> {
+fn evaluate(postfix: Vec<Token>) -> Result<String, String> {
     let mut stack = Vec::new();
 
     for token in postfix {
         match token {
             Token::Number(num) => stack.push(num),
             _ => {
-                let right: i32 = <Vec<f64> as Into<T>>::into(stack).pop().ok_or("Missing operand")?; // .ok_or Converts the Option returned by pop() into a Result.
-                let left:i32 = <Vec<f64> as Into<T>>::into(stack).pop().ok_or("Missing operand")?;
+                let right: i32 = stack.pop().ok_or("Missing operand")? as i32; // .ok_or Converts the Option returned by pop() into a Result.
+                let left: i32 = stack.pop().ok_or("Missing operand")? as i32;
                 let result = match token {
-                    Token::Plus => addition(left, right),
-                    Token::Minus => subtraction(left, right),
-                    Token::Multiply => multiplication(left, right),
+                    Token::Plus => addition(left, right).to_string(),
+                    Token::Minus => subtraction(left, right).to_string(),
+                    Token::Multiply => multiplication(left, right).to_string(),
                     Token::Divide => match division(left, right) {
                         Ok(result) => {
-                            result
+                            result.to_string();
                         }
                         Err(e) => {
                             println!("Error: {e}");
-                            return Err(e);
                         }
                         }
                     _ => return Err("Invalid operator in evaluation".to_string()),
-                }
-            };
+                };
+                stack.push(result);
+            },
         }
-        stack.push(result);
     }
     
     if stack.len() != 1 {
         return Err("Invalid expression".to_string());
     }
 
-    return Ok(stack[0].to_string())
+    Ok(stack[0].to_string())
 }
 
 fn operation_to_symbol(param: &str) -> Option<&'static str> {
@@ -236,7 +235,7 @@ fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
 
     let secret_number: u32 = rand::rng().random_range(1..=10);
 
-    let mut count = 0;
+    let _count = 0;
 
     match param {
         Ok(value) if !(1..=4).contains(&value) => {
@@ -282,6 +281,7 @@ fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
                 }             
             }
         }
+        Ok(_) => todo!(),
         Err(e) => {
             panic!("Error: Invalid input: {}", e);
         }
