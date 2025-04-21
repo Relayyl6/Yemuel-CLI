@@ -70,7 +70,7 @@ fn main() {
 
     if !(1..=4).contains(&option_type) {
         println!("Since you wouldn't fancy a single operation");
-        simple_calc(Ok(option_type));
+        let _ = simple_calc(Ok(option_type));
     } else if (1..=4).contains(&option_type) {
         perform_calculation(option_type);
     } else {
@@ -182,16 +182,12 @@ fn evaluate(postfix: Vec<Token>) -> Result<String, String> {
                 let right: i32 = stack.pop().ok_or("Missing operand")? as i32; // .ok_or Converts the Option returned by pop() into a Result.
                 let left: i32 = stack.pop().ok_or("Missing operand")? as i32;
                 let result = match token {
-                    Token::Plus => addition(left, right).to_string(),
-                    Token::Minus => subtraction(left, right).to_string(),
-                    Token::Multiply => multiplication(left, right).to_string(),
+                    Token::Plus => addition(left, right) as f64,
+                    Token::Minus => subtraction(left, right) as f64,
+                    Token::Multiply => multiplication(left, right) as f64,
                     Token::Divide => match division(left, right) {
-                        Ok(result) => {
-                            result.to_string();
-                        }
-                        Err(e) => {
-                            println!("Error: {e}");
-                        }
+                        Ok(result) => result as f64,
+                        Err(e) => return Err(format!("Error: {e}"))
                         }
                     _ => return Err("Invalid operator in evaluation".to_string()),
                 };
@@ -216,8 +212,6 @@ fn operation_to_symbol(param: &str) -> Option<&'static str> {
         _ => None,
     }
 }
-
-
 
 fn process_calc(input: &str) -> Result<String, String> {
     let tokens = tokenize(input)?;
@@ -245,7 +239,7 @@ fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
                 // evaluate(postfix);
 
                 println!(
-                    "Enter string operation you would like to perform\n e.g. {}, {}, {}, {}, {}, {}, {}, {}",
+                    "Enter string operation you would like to perform\n e.g. {} {} {} {} {} {} {} {}",
                     secret_number, add_op, secret_number, sub_op, secret_number, div_op, secret_number, mul_op
                 );
 
