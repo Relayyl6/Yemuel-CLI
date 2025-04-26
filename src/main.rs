@@ -7,6 +7,7 @@ enum Operation {
     Subtraction,
     Division,
     Multiplication,
+    CgpaCalculator,
 }
 
 #[derive(PartialEq)]
@@ -27,6 +28,7 @@ impl fmt::Display for Operation {
             Operation::Subtraction => write!(f, "Subtraction"),
             Operation::Division => write!(f, "Division"),
             Operation::Multiplication => write!(f, "Multiplication"),
+            Operation::CgpaCalculator => write!(f, "CGPA Calculator")
         }
     }
 }
@@ -50,10 +52,19 @@ fn main() {
     let sub_op = Operation::Subtraction;
     let div_op = Operation::Division;
     let mul_op = Operation::Multiplication;
+    let cgpa_op = Operation::CgpaCalculator;
 
     println!(
-        "welcome to the rust CLI calculator\nEnter the operation you would like to perform\n 1.{} \n 2.{} \n 3.{} \n 4.{} \n Any other element implements freestyle calc \n Enter 'end' to quit.",
-        add_op, sub_op, div_op, mul_op
+        "\twelcome to the rust CLI calculator\t
+        Enter the operation you would like to perform\t
+        1. {} \t
+        2. {} \t 
+        3. {} \t 
+        4. {} \t 
+        5. {} \t 
+        Any other integer element implements freestyle calculation \t 
+        Enter 'end' to quit. Need more info? enter 'info'", 
+        add_op, sub_op, div_op, mul_op, cgpa_op
     );
 
     let mut option_type = String::new();
@@ -72,13 +83,19 @@ fn main() {
         Ok(num) if (1..=4).contains(&num) => {
             perform_calculation(num);
         }
+        Ok(num) if num == 5 => {
+            cgpa_calc()
+        }
         Ok(num) => {
             println!("Since you wouldn't fancy a single operation");
             let _ = simple_calc(Ok(num));
         }
         Err(_) => {
-            println!("Since you wouldn't fancy a single operation");
-            let _ = simple_calc(Err(option_type.to_string()));
+            // println!("Since you wouldn't fancy a single operation");
+            // let _ = simple_calc(Err(option_type.to_string()));
+            if option_type.trim().to_lowercase() == "info" {
+                let _ = Err::<String, ()>(more_info());
+            }
         }
     }
 
@@ -92,6 +109,97 @@ fn main() {
     // } else {
     //     println!("Thank you for your time");
     // }
+}
+
+fn more_info() {
+    println!("These are the expected features");
+}
+
+fn cgpa_calc() {
+
+    println!("How many courses do you have?");
+    
+    let mut num_of_courses = String::new();
+    io::stdin()
+        .read_line(&mut num_of_courses)
+        .expect("Enter a valid student number");
+    
+    let num_of_courses: i32 = num_of_courses.trim()
+                                            .parse()
+                                            .expect("Please enter a valid number");
+    println!("This is the number of courses: {}", num_of_courses);
+
+    // let count: &i32 = &num_of_courses;
+
+    let mut count = 0;
+    let mut total_credit_load = 0;
+    let mut total_grade_points  = 0;
+    let remaining = 22;
+
+    while count < num_of_courses {
+        println!("Credit load left = {}", remaining-total_credit_load);
+
+        // Course code 
+        println!("Enter Course Code: ");
+        let mut course_code = String::new();
+        io::stdin() 
+            .read_line(& mut course_code)
+            .expect("Failed to read input");
+        let _course_code = course_code.trim();
+                                          
+
+        // Course credit
+        println!("Enter Course Credit: ");
+        let mut course_credit = String::new();
+        io::stdin() 
+            .read_line(& mut course_credit)
+            .expect("Failed to read input");
+        let course_credit: i32 = course_credit.trim()
+                                              .parse()
+                                              .expect("Make enter a valid number");
+
+        // Grade input
+        println!("Enter Grade (A-F): ");
+        let mut grade_score = String::new();
+        io::stdin() 
+            .read_line(& mut grade_score)
+            .expect("Failed to read input");
+        // .chars() turns a string slice into an iterator over its characters, .next() gets the first character from that iterator
+        let grade_score = grade_score.trim()
+                                     .chars()
+                                     .next()
+                                     .expect("No grade entered");
+
+        let grade_point =  grade_calculation(grade_score);
+        let grade_point: i32 = grade_point.trim()
+                                     .parse()
+                                     .expect("Invalid grade point");
+
+        total_grade_points += grade_point * course_credit;
+        total_credit_load += course_credit;
+        count += 1;
+                             
+        if total_credit_load > remaining {
+            panic!("Exceeded maximum credit load");
+        }
+
+
+        let cgpa = total_grade_points as f64 / total_credit_load as f64;
+        let formatted_cgpa = format!("{:.2}", cgpa);
+        println!("The overall cgpa of the {} number of courses is {}", num_of_courses, formatted_cgpa)
+    }
+}
+
+fn grade_calculation(param: char) -> String {
+    match param.to_ascii_uppercase() {
+        'A' => String::from("5"),
+        'B' => String::from("4"),
+        'C' => String::from("3"),
+        'D' => String::from("2"),
+        'E' => String::from("1"),
+        'F' => String::from("0"),
+        _ => panic!("Invalid day")
+    }
 }
 
 fn tokenize(input: &str) -> Result<Vec<Token>, String> { 
@@ -234,7 +342,6 @@ fn process_calc(input: &str) -> Result<String, String> {
     let postfix = parse(tokens)?;
     let result = evaluate(postfix)?;
     Ok(result)
-
 }
 
 fn simple_calc(param: Result<i32, String>) -> Result<&'static str, String> {
@@ -309,7 +416,7 @@ fn perform_calculation(params: i32) {
             println!("Selected operation, {}", chosen_operation);
 
             if let Some(symbol) = operation_to_symbol(chosen_operation) {
-                println!("Symbol: {}", symbol);
+                // println!("Symbol: {}", symbol);
 
                 println!("Please enter your first input: ");
                 let mut first_input = String::new();
@@ -421,12 +528,9 @@ fn display(option_input: i32) -> Result<&'static str, String> {
         2 => Ok("Subtraction"),
         3 => Ok("Division"),
         4 => Ok("Multiplication"),
-        5 => Ok("Higher order calculations pending"),
+        5 => Ok("CGPA calculator"),
         _ if op_code < 1 => Err("Number too small".to_string()),
         _ if op_code > 5 => Err("Number too large".to_string()),
         _ => Err("Invalid input".to_string()),
     }
-}
-
-
-    
+}  
