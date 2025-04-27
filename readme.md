@@ -56,8 +56,7 @@ A blazing-fast, type-safe command-line calculator with **CGPA support**, random 
 ```toml
 [dependencies]
 rand = "0.8"    # Random number generation
-<!-- clap = "4.0"    # CLI argument parsing -->
-<!-- tabled = "0.11" # Pretty GPA table formatting -->
+
 ```
 
 ## 🛠️ Installation
