@@ -87,11 +87,8 @@ fn main() {
     let option_type = option_type.trim();
 
     match option_type.parse::<i32>() {
-        Ok(num) if (1..=4).contains(&num) => {
+        Ok(num) if (1..=5).contains(&num) => {
             perform_calculation(num);
-        }
-        Ok(num) if num == 5 => {
-            cgpa_calc()
         }
         Ok(num) => {
             println!("Since you wouldn't fancy a single operation");
@@ -129,6 +126,7 @@ fn operation_to_symbol(param: &str) -> Option<&'static str> {
         "Subtraction" => Some("-"),
         "Division" => Some("/"),
         "Multiplication" => Some("*"),
+        "CGPA calculator" => Some("5.0 scale"),
         _ => None,
     }
 }
@@ -211,9 +209,15 @@ fn perform_calculation(params: i32) {
         Ok(chosen_operation) => {
             println!("Selected operation, {}", chosen_operation);
 
+            if chosen_operation == "CGPA calculator" {
+                cgpa_calc();
+                return;
+            }
+
             if let Some(symbol) = operation_to_symbol(chosen_operation) {
                 // println!("Symbol: {}", symbol);
                 loop {
+                    
                     println!("Please enter your first input: ");
                     let mut first_input = String::new();
                     io::stdin()
@@ -271,7 +275,7 @@ fn perform_calculation(params: i32) {
                                     first_input, symbol, second_input, result
                                 );
                                 break;
-                            }
+                            },
                             _ => {
                                 panic!("Unexpected operation");
                             }

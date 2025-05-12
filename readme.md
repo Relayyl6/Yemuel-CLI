@@ -61,8 +61,8 @@ rand = "0.8"    # Random number generation
 
 ## 🛠️ Installation
 ```bash
-cargo install calc-rs  # Install from crates.io
-# OR
+# cargo install calc-rs  # Install from crates.io
+# # OR
 git clone https://github.com/Relayyl6/Yemuel-CLI.git
 cd Yemuel-CLI && cargo build --release
 ```
